@@ -30,6 +30,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('History'),
+        backgroundColor: Colors.orange,
+        elevation: 0,
       ),
       body: ListView.builder(
         itemCount: _historyList.length,
