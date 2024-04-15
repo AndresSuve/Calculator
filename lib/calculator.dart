@@ -6,17 +6,15 @@ import 'converter/converter_screen.dart';
 import 'history/HistoryScreen.dart';
 import 'package:calculator/history/database_helper.dart';
 
-
 class Calculator extends StatefulWidget {
-  const Calculator({super.key});
+  const Calculator({Key? key}) : super(key: key);
 
   @override
   _CalculatorState createState() => _CalculatorState();
 }
 
-DatabaseHelper dbHelper = DatabaseHelper();
-
 class _CalculatorState extends State<Calculator> {
+  final DatabaseHelper dbHelper = DatabaseHelper();
   String _expression = '';
 
   void _onButtonPressed(String buttonText) {
@@ -36,7 +34,7 @@ class _CalculatorState extends State<Calculator> {
     });
   }
 
-  void _onEvaluatePressed() {
+  void _onEvaluatePressed() async {
     try {
       Parser parser = Parser();
       Expression expression = parser.parse(_expression);
@@ -44,10 +42,11 @@ class _CalculatorState extends State<Calculator> {
       double result = expression.evaluate(EvaluationType.REAL, contextModel);
 
       String timestamp = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now());
-
       String calculation = '$_expression = $result';
 
       dbHelper.insertCalculation(calculation, timestamp);
+
+      dbHelper.addCalculationToFirestore(_expression, result.toString(), timestamp);
 
       setState(() {
         _expression = result.toString();
@@ -58,8 +57,6 @@ class _CalculatorState extends State<Calculator> {
       });
     }
   }
-
-
 
   bool _isOperator(String text) {
     return ['+', '-', '*', '/'].contains(text);

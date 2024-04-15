@@ -1,8 +1,10 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DatabaseHelper {
   static Database? _database;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -29,6 +31,20 @@ class DatabaseHelper {
       {'calculation': calculation, 'timestamp': timestamp},
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  Future<void> addCalculationToFirestore(String calculation, String result,
+      String authorUid) async {
+    try {
+      await _firestore.collection('calculations').add({
+        'calculation': calculation,
+        'result': result,
+        'authorUid': authorUid,
+        'timestamp': Timestamp.now(),
+      });
+    } catch (e) {
+      print('Error adding calculation to Firestore: $e');
+    }
   }
 
   Future<List<Map<String, dynamic>>> getCalculations() async {
