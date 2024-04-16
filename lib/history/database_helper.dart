@@ -1,54 +1,45 @@
-import 'package:path/path.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class DatabaseHelper {
-  static Database? _database;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  Future<Database> get database async {
-    if (_database != null) return _database!;
-    _database = await initDatabase();
-    return _database!;
-  }
-
-  Future<Database> initDatabase() async {
-    return openDatabase(
-      join(await getDatabasesPath(), 'calculator_database.db'),
-      onCreate: (db, version) {
-        return db.execute(
-          'CREATE TABLE calculations(id INTEGER PRIMARY KEY AUTOINCREMENT, calculation TEXT, timestamp TEXT)',
-        );
-      },
-      version: 1,
-    );
-  }
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Future<void> insertCalculation(String calculation, String timestamp) async {
-    final Database db = await database;
-    await db.insert(
-      'calculations',
-      {'calculation': calculation, 'timestamp': timestamp},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
-
-  Future<void> addCalculationToFirestore(String calculation, String result,
-      String authorUid) async {
     try {
-      await _firestore.collection('calculations').add({
-        'calculation': calculation,
-        'result': result,
-        'authorUid': authorUid,
-        'timestamp': Timestamp.now(),
-      });
+      User? user = _auth.currentUser;
+      if (user != null) {
+        await _firestore.collection('calculation_history').add({
+          'calculation': calculation,
+          'timestamp': timestamp,
+          'authorUid': user.uid,
+        });
+      } else {
+        throw Exception('No current user found.');
+      }
     } catch (e) {
       print('Error adding calculation to Firestore: $e');
     }
   }
 
-  Future<List<Map<String, dynamic>>> getCalculations() async {
-    final Database db = await database;
-    return db.query('calculations');
+  Stream<List<Map<String, dynamic>>> getCalculations() {
+    try {
+      User? user = _auth.currentUser;
+      if (user != null) {
+        return _firestore
+            .collection('calculation_history')
+            .where('authorUid', isEqualTo: user.uid)
+            .orderBy('timestamp', descending: true)
+            .snapshots()
+            .map((snapshot) => snapshot.docs
+            .map((doc) => doc.data() as Map<String, dynamic>)
+            .toList());
+      } else {
+        throw Exception('No current user found.');
+      }
+    } catch (e) {
+      print('Error getting calculation history stream: $e');
+      return Stream.value([]);
+    }
   }
 }

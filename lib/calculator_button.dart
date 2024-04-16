@@ -4,10 +4,15 @@ class CalculatorButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
   final Color backgroundColor;
+  final Color textColor;
 
-  const CalculatorButton({super.key, required this.text,
-    required this.onPressed, this.backgroundColor = Colors.grey,
-    required Color textColor});
+  const CalculatorButton({
+    Key? key,
+    required this.text,
+    required this.onPressed,
+    this.backgroundColor = Colors.grey,
+    required this.textColor,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +23,10 @@ class CalculatorButton extends StatelessWidget {
         padding: const EdgeInsets.all(20.0),
         textStyle: const TextStyle(fontSize: 20.0),
       ),
-      child: Text(text),
+      child: Text(
+        text,
+        style: TextStyle(color: textColor),
+      ),
     );
   }
 }

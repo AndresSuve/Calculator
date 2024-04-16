@@ -3,8 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:math_expressions/math_expressions.dart';
 import 'calculator_button.dart';
 import 'converter/converter_screen.dart';
-import 'history/HistoryScreen.dart';
-import 'package:calculator/history/database_helper.dart';
+import 'history/firebase_service.dart';
+import 'screens/history_screen.dart';
 
 class Calculator extends StatefulWidget {
   const Calculator({Key? key}) : super(key: key);
@@ -14,7 +14,8 @@ class Calculator extends StatefulWidget {
 }
 
 class _CalculatorState extends State<Calculator> {
-  final DatabaseHelper dbHelper = DatabaseHelper();
+  final DatabaseService databaseService = DatabaseService(); // Use DatabaseService instead of FirebaseService
+
   String _expression = '';
 
   void _onButtonPressed(String buttonText) {
@@ -44,9 +45,7 @@ class _CalculatorState extends State<Calculator> {
       String timestamp = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now());
       String calculation = '$_expression = $result';
 
-      dbHelper.insertCalculation(calculation, timestamp);
-
-      dbHelper.addCalculationToFirestore(_expression, result.toString(), timestamp);
+      await databaseService.addCalculation(calculation, timestamp); // Use databaseService to add the calculation to Firestore
 
       setState(() {
         _expression = result.toString();
@@ -241,35 +240,47 @@ class _CalculatorState extends State<Calculator> {
                           child: CalculatorButton(
                             text: '=',
                             onPressed: _onEvaluatePressed,
-                            backgroundColor: Colors.orange, textColor: Colors.red,
+                            backgroundColor: Colors.orange,
+                            textColor: Colors.white,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const ConverterScreen()),
-                      );
-                    },
-                    child: const Text('Converter'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => HistoryScreen()),
-                      );
-                    },
-                    child: const Text('History'),
                   ),
                 ],
               ),
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: BottomAppBar(
+        color: Colors.black,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ConverterScreen()),
+                );
+              },
+              child: const Text('Converter'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => HistoryScreen(historyDataStream: databaseService.getCalculations()),
+                  ),
+                );
+              },
+
+              child: const Text('History'),
+            ),
+          ],
+        ),
       ),
     );
   }

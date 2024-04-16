@@ -1,22 +1,20 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class FirebaseService {
+class DatabaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<void> addCalculationHistory(String calculation, String result) async {
+  Future<void> addCalculation(String calculation, String timestamp) async {
     try {
       await _firestore.collection('calculation_history').add({
         'calculation': calculation,
-        'result': result,
-        'timestamp': DateTime.now(),
+        'timestamp': timestamp,
       });
-      print('Calculation history added successfully');
     } catch (e) {
-      print('Error adding calculation history: $e');
+      print('Error adding calculation to Firestore: $e');
     }
   }
 
-  Stream<List<Map<String, dynamic>>> getCalculationHistoryStream() {
+  Stream<List<Map<String, dynamic>>> getCalculations() {
     try {
       return _firestore
           .collection('calculation_history')
@@ -26,6 +24,7 @@ class FirebaseService {
           .map((doc) => doc.data() as Map<String, dynamic>)
           .toList());
     } catch (e) {
+      // Print error message if there's an error getting the calculation history from Firestore
       print('Error getting calculation history stream: $e');
       return Stream.value([]);
     }
